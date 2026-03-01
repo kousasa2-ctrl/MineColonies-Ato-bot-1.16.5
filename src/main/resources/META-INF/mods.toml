@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[36,)"
+license="All rights reserved"
+
+[[mods]]
+modId="colony_ai"
+version="1.0"
+displayName="Colony Intelligence & Automation"
+authors="colony_ai"
+description='''
+Client-side automation helper for MineColonies.
+'''
+
+[[dependencies.colony_ai]]
+modId="forge"
+mandatory=true
+versionRange="[36.2.34,)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.colony_ai]]
+modId="minecolonies"
+mandatory=false
+versionRange="[1.16.5-1.0.0-RELEASE,)"
+ordering="AFTER"
+side="CLIENT"

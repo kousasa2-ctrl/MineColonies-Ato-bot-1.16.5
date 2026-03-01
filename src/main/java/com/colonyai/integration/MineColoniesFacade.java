@@ -1,5 +1,6 @@
 package com.colonyai.integration;
 
+import com.ldtteam.minecolonies.api.MinecoloniesAPIProxy;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,9 +33,7 @@ public final class MineColoniesFacade
 
         try
         {
-            final Class<?> apiClass = Class.forName("com.minecolonies.api.MinecoloniesAPIProxy");
-            final Method getColonyManager = apiClass.getMethod("getColonyManager");
-            final Object colonyManager = getColonyManager.invoke(null);
+            final Object colonyManager = MinecoloniesAPIProxy.getColonyManager();
             if (colonyManager == null)
             {
                 return Collections.emptyList();
@@ -45,6 +44,7 @@ public final class MineColoniesFacade
             {
                 return Collections.emptyList();
             }
+
             final Object colony = getIColony.invoke(colonyManager, mc.player.level.dimension(), mc.player.blockPosition());
             if (colony == null)
             {
@@ -63,9 +63,8 @@ public final class MineColoniesFacade
             {
                 return Collections.emptyList();
             }
-            final Object buildingCollection = getBuildings.invoke(buildingManager);
-            final Iterable<?> buildings = asIterable(buildingCollection);
 
+            final Iterable<?> buildings = asIterable(getBuildings.invoke(buildingManager));
             for (final Object building : buildings)
             {
                 if (building == null || !building.getClass().getName().contains("BuildingBuilder"))
@@ -131,8 +130,7 @@ public final class MineColoniesFacade
                 continue;
             }
 
-            final ItemStack probe = new ItemStack(item);
-            if (containsItem(tileEntity, probe, 1))
+            if (containsItem(tileEntity, new ItemStack(item), 1))
             {
                 result.add(tileEntity.getBlockPos());
             }
@@ -235,7 +233,6 @@ public final class MineColoniesFacade
 
         return false;
     }
-
 
     private static Method findMethod(final Class<?> owner, final String name, final int params)
     {

@@ -1,5 +1,8 @@
 package com.colonyai.integration;
 
+import baritone.api.BaritoneAPI;
+import baritone.api.pathing.goals.Goal;
+import baritone.api.pathing.goals.GoalBlock;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.inventory.container.ChestContainer;
@@ -52,15 +55,10 @@ public final class BaritoneFacade
 
         try
         {
-            final Class<?> apiClass = Class.forName("baritone.api.BaritoneAPI");
-            final Object provider = apiClass.getMethod("getProvider").invoke(null);
-            final Object baritone = provider.getClass().getMethod("getBaritoneForPlayer", ClientPlayerEntity.class).invoke(provider, player);
-            final Class<?> goalBlockClass = Class.forName("baritone.api.pathing.goals.GoalBlock");
-            final Object goalBlock = goalBlockClass.getConstructor(BlockPos.class).newInstance(pos);
-            final Object customGoalProcess = baritone.getClass().getMethod("getCustomGoalProcess").invoke(baritone);
-            customGoalProcess.getClass().getMethod("setGoalAndPath", Class.forName("baritone.api.pathing.goals.Goal")).invoke(customGoalProcess, goalBlock);
+            final Goal goal = new GoalBlock(pos);
+            BaritoneAPI.getProvider().getPrimaryBaritone().getCustomGoalProcess().setGoalAndPath(goal);
         }
-        catch (final Exception ignored)
+        catch (final Throwable ignored)
         {
             if (player.distanceToSqr(Vector3d.atCenterOf(pos)) > 2.25D)
             {
@@ -137,15 +135,10 @@ public final class BaritoneFacade
 
         try
         {
-            final Class<?> apiClass = Class.forName("baritone.api.BaritoneAPI");
-            final Object provider = apiClass.getMethod("getProvider").invoke(null);
-            final Object baritone = provider.getClass().getMethod("getBaritoneForPlayer", ClientPlayerEntity.class).invoke(provider, mc.player);
-            final Object customGoalProcess = baritone.getClass().getMethod("getCustomGoalProcess").invoke(baritone);
-            customGoalProcess.getClass().getMethod("onLostControl").invoke(customGoalProcess);
-            final Object pathingBehavior = baritone.getClass().getMethod("getPathingBehavior").invoke(baritone);
-            pathingBehavior.getClass().getMethod("cancelEverything").invoke(pathingBehavior);
+            BaritoneAPI.getProvider().getPrimaryBaritone().getCustomGoalProcess().onLostControl();
+            BaritoneAPI.getProvider().getPrimaryBaritone().getPathingBehavior().cancelEverything();
         }
-        catch (final Exception ignored)
+        catch (final Throwable ignored)
         {
             mc.player.getNavigation().stop();
         }
