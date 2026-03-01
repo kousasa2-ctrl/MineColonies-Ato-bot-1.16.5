@@ -1,0 +1,27 @@
+plugins {
+    id 'net.minecraftforge.gradle' version '[5.1,5.2)'
+}
+
+group = 'com.colonyai'
+version = '1.0.0'
+archivesBaseName = 'colony_ai'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+
+minecraft {
+    mappings channel: 'official', version: '1.16.5'
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://ldtteam.jfrog.io/artifactory/mods-maven' }
+    maven { url = 'https://jitpack.io' }
+    maven { url = 'https://cursemaven.com' }
+}
+
+dependencies {
+    implementation fg.deobf("com.ldtteam:minecolonies:1.16.5-1.0.0-RELEASE:universal")
+    implementation fg.deobf("cabaletta:baritone-api:1.6.3")
+    // Если используешь Spartan Weaponry API
+    compileOnly fg.deobf("com.oblivioussp:spartanweaponry:1.16.5-2.2.0-beta-2")
+}
