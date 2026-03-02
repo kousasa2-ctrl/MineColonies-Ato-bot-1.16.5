@@ -1,21 +1,31 @@
 package com.colonyai.integration;
 
-import baritone.api.BaritoneAPI;
-import baritone.api.IBaritone;
-import baritone.api.pathing.goals.GoalBlock;
+import java.lang.reflect.Method;
 import net.minecraft.util.math.BlockPos;
 
 public final class BaritoneFacade
 {
+    private static final String BARITONE_API_CLASS = "baritone.api.BaritoneAPI";
+    private static final String GOAL_BLOCK_CLASS = "baritone.api.pathing.goals.GoalBlock";
+
     private BaritoneFacade()
     {
     }
 
-    public static IBaritone getPrimaryBaritone()
+    public static Object getPrimaryBaritone()
     {
         try
         {
-            return BaritoneAPI.getProvider().getPrimaryBaritone();
+            final Class<?> apiClass = Class.forName(BARITONE_API_CLASS);
+            final Method getProvider = apiClass.getMethod("getProvider");
+            final Object provider = getProvider.invoke(null);
+            if (provider == null)
+            {
+                return null;
+            }
+
+            final Method getPrimaryBaritone = provider.getClass().getMethod("getPrimaryBaritone");
+            return getPrimaryBaritone.invoke(provider);
         }
         catch (final Throwable ignored)
         {
@@ -30,12 +40,33 @@ public final class BaritoneFacade
 
     public static void pathTo(final BlockPos pos)
     {
-        final IBaritone baritone = getPrimaryBaritone();
-        if (baritone == null || pos == null)
+        if (pos == null)
         {
             return;
         }
 
-        baritone.getCustomGoalProcess().setGoalAndPath(new GoalBlock(pos));
+        final Object baritone = getPrimaryBaritone();
+        if (baritone == null)
+        {
+            return;
+        }
+
+        try
+        {
+            final Method getCustomGoalProcess = baritone.getClass().getMethod("getCustomGoalProcess");
+            final Object customGoalProcess = getCustomGoalProcess.invoke(baritone);
+            if (customGoalProcess == null)
+            {
+                return;
+            }
+
+            final Class<?> goalBlockClass = Class.forName(GOAL_BLOCK_CLASS);
+            final Object goalBlock = goalBlockClass.getConstructor(BlockPos.class).newInstance(pos);
+            final Method setGoalAndPath = customGoalProcess.getClass().getMethod("setGoalAndPath", Class.forName("baritone.api.pathing.goals.Goal"));
+            setGoalAndPath.invoke(customGoalProcess, goalBlock);
+        }
+        catch (final Throwable ignored)
+        {
+        }
     }
 }

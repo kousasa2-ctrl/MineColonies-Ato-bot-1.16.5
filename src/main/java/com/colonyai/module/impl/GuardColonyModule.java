@@ -21,7 +21,7 @@ public final class GuardColonyModule extends Module
     public void onTick()
     {
         final Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null)
+        if (mc.player == null || mc.level == null || mc.gameMode == null)
         {
             return;
         }
