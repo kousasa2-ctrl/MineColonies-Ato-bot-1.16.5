@@ -1,146 +1,72 @@
 package com.colonyai.integration;
 
-import baritone.api.BaritoneAPI;
-import baritone.api.pathing.goals.Goal;
-import baritone.api.pathing.goals.GoalBlock;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.inventory.container.ChestContainer;
-import net.minecraft.inventory.container.ClickType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
+import java.lang.reflect.Method;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.math.vector.Vector3d;
 
 public final class BaritoneFacade
 {
-    private static boolean suspended;
+    private static final String BARITONE_API_CLASS = "baritone.api.BaritoneAPI";
+    private static final String GOAL_BLOCK_CLASS = "baritone.api.pathing.goals.GoalBlock";
 
     private BaritoneFacade()
     {
     }
 
-    public static void suspendNavigation(final boolean value)
+    public static Object getPrimaryBaritone()
     {
-        suspended = value;
+        try
+        {
+            final Class<?> apiClass = Class.forName(BARITONE_API_CLASS);
+            final Method getProvider = apiClass.getMethod("getProvider");
+            final Object provider = getProvider.invoke(null);
+            if (provider == null)
+            {
+                return null;
+            }
+
+            final Method getPrimaryBaritone = provider.getClass().getMethod("getPrimaryBaritone");
+            return getPrimaryBaritone.invoke(provider);
+        }
+        catch (final Throwable ignored)
+        {
+            return null;
+        }
     }
 
-    public static boolean isSuspended()
+    public static boolean hasBaritone()
     {
-        return suspended;
+        return getPrimaryBaritone() != null;
     }
 
     public static void pathTo(final BlockPos pos)
     {
-        mapsTo(pos);
-    }
-
-    public static void mapsTo(final BlockPos pos)
-    {
-        if (suspended || pos == null)
+        if (pos == null)
         {
             return;
         }
 
-        final Minecraft mc = Minecraft.getInstance();
-        final ClientPlayerEntity player = mc.player;
-        if (player == null)
+        final Object baritone = getPrimaryBaritone();
+        if (baritone == null)
         {
             return;
         }
 
         try
         {
-            final Goal goal = new GoalBlock(pos);
-            BaritoneAPI.getProvider().getPrimaryBaritone().getCustomGoalProcess().setGoalAndPath(goal);
+            final Method getCustomGoalProcess = baritone.getClass().getMethod("getCustomGoalProcess");
+            final Object customGoalProcess = getCustomGoalProcess.invoke(baritone);
+            if (customGoalProcess == null)
+            {
+                return;
+            }
+
+            final Class<?> goalBlockClass = Class.forName(GOAL_BLOCK_CLASS);
+            final Object goalBlock = goalBlockClass.getConstructor(BlockPos.class).newInstance(pos);
+            final Method setGoalAndPath = customGoalProcess.getClass().getMethod("setGoalAndPath", Class.forName("baritone.api.pathing.goals.Goal"));
+            setGoalAndPath.invoke(customGoalProcess, goalBlock);
         }
         catch (final Throwable ignored)
         {
-            if (player.distanceToSqr(Vector3d.atCenterOf(pos)) > 2.25D)
-            {
-                player.getNavigation().moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 1.2D);
-            }
-        }
-    }
-
-    public static boolean takeItemFromChest(final BlockPos chestPos, final ItemStack wanted)
-    {
-        if (chestPos == null || wanted.isEmpty() || suspended)
-        {
-            return false;
-        }
-
-        final Minecraft mc = Minecraft.getInstance();
-        final ClientPlayerEntity player = mc.player;
-        if (player == null || mc.level == null || mc.gameMode == null)
-        {
-            return false;
-        }
-
-        if (player.distanceToSqr(Vector3d.atCenterOf(chestPos)) > 9.0D)
-        {
-            mapsTo(chestPos);
-            return false;
-        }
-
-        final TileEntity tileEntity = mc.level.getBlockEntity(chestPos);
-        if (tileEntity == null)
-        {
-            return false;
-        }
-
-        final TileEntityType<?> type = tileEntity.getType();
-        final String typeName = type.getRegistryName() == null ? "" : type.getRegistryName().toString();
-        if (!typeName.contains("chest"))
-        {
-            return false;
-        }
-
-        final BlockRayTraceResult hit = new BlockRayTraceResult(Vector3d.atCenterOf(chestPos), Direction.UP, chestPos, false);
-        mc.gameMode.useItemOn(player, mc.level, Hand.MAIN_HAND, hit);
-
-        if (!(player.containerMenu instanceof ChestContainer))
-        {
-            return false;
-        }
-
-        final ChestContainer chest = (ChestContainer) player.containerMenu;
-        final int chestSlots = chest.getRowCount() * 9;
-        for (int slot = 0; slot < chestSlots; slot++)
-        {
-            final ItemStack stack = chest.getSlot(slot).getItem();
-            if (stack.isEmpty() || stack.getItem() != wanted.getItem())
-            {
-                continue;
-            }
-
-            mc.gameMode.handleInventoryMouseClick(chest.containerId, slot, 0, ClickType.QUICK_MOVE, player);
-            return true;
-        }
-
-        return false;
-    }
-
-    public static void clearTasks()
-    {
-        final Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null)
-        {
-            return;
-        }
-
-        try
-        {
-            BaritoneAPI.getProvider().getPrimaryBaritone().getCustomGoalProcess().onLostControl();
-            BaritoneAPI.getProvider().getPrimaryBaritone().getPathingBehavior().cancelEverything();
-        }
-        catch (final Throwable ignored)
-        {
-            mc.player.getNavigation().stop();
         }
     }
 }

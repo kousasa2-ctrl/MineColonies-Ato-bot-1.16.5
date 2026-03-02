@@ -1,27 +1,62 @@
-plugins {
-    id 'net.minecraftforge.gradle' version '[5.1,5.2)'
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', transitive: true
+    }
 }
+
+apply plugin: 'net.minecraftforge.gradle'
 
 group = 'com.colonyai'
 version = '1.0.0'
-archivesBaseName = 'colony_ai'
+archivesBaseName = 'colonyai'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 
 minecraft {
     mappings channel: 'official', version: '1.16.5'
-}
-
-repositories {
-    mavenCentral()
-    maven { url = 'https://ldtteam.jfrog.io/artifactory/mods-maven' }
-    maven { url = 'https://jitpack.io' }
-    maven { url = 'https://cursemaven.com' }
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            mods {
+                colonyai {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
 }
 
 dependencies {
-    implementation fg.deobf("com.ldtteam:minecolonies:1.16.5-1.0.0-RELEASE:universal")
-    implementation fg.deobf("cabaletta:baritone-api:1.6.3")
-    // Если используешь Spartan Weaponry API
-    compileOnly fg.deobf("com.oblivioussp:spartanweaponry:1.16.5-2.2.0-beta-2")
+    minecraft 'net.minecraftforge:forge:1.16.5-36.2.34'
+    implementation files('libs/minecolonies-1.16.5.jar', 'libs/structurize-1.16.5.jar', 'libs/baritone-api-forge-1.16.5.jar')
 }
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('META-INF/mods.toml') { expand 'version': project.version }
+}
+
+jar {
+    manifest {
+        attributes([
+            'Specification-Title': 'colonyai',
+            'Specification-Vendor': 'sasha',
+            'Specification-Version': '1',
+            'Implementation-Title': 'colonyai',
+            'Implementation-Version': '1.0.0',
+            'Implementation-Vendor': 'sasha',
+            'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+jar.finalizedBy('reobfJar')

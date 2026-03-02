@@ -1,50 +1,52 @@
 package com.colonyai.module;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 
 public final class ModuleManager
 {
-    private final Map<String, Module> modules = new LinkedHashMap<String, Module>();
-    private int pauseTicks;
+    private final List<Module> modules = new ArrayList<Module>();
 
     public void register(final Module module)
     {
-        modules.put(module.id(), module);
-        module.setEnabled(true);
+        modules.add(module);
     }
 
-    public void tick()
+    public List<Module> getModules()
     {
-        if (pauseTicks > 0)
-        {
-            pauseTicks--;
-            return;
-        }
-
-        for (final Module module : modules.values())
-        {
-            module.tick();
-        }
+        return Collections.unmodifiableList(modules);
     }
 
-    public void pauseForTicks(final int ticks)
+    public List<Module> getModulesByCategory(final Category category)
     {
-        this.pauseTicks = Math.max(this.pauseTicks, ticks);
+        final List<Module> filtered = new ArrayList<Module>();
+        for (final Module module : modules)
+        {
+            if (module.getCategory() == category)
+            {
+                filtered.add(module);
+            }
+        }
+        return filtered;
+    }
+
+    public void tickEnabledModules()
+    {
+        for (final Module module : modules)
+        {
+            if (module.isEnabled())
+            {
+                module.onTick();
+            }
+        }
     }
 
     public void disableAll()
     {
-        for (final Module module : modules.values())
+        for (final Module module : modules)
         {
             module.setEnabled(false);
         }
-    }
-
-    public Collection<Module> allModules()
-    {
-        return Collections.unmodifiableCollection(modules.values());
     }
 }
