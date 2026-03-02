@@ -6,9 +6,9 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod(ColonyAIMod.MOD_ID)
-public class ColonyAIMod
+public final class ColonyAIMod
 {
-    public static final String MOD_ID = "colony_ai";
+    public static final String MOD_ID = "colonyai";
 
     public ColonyAIMod()
     {

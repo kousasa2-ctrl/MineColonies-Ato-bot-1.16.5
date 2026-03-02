@@ -3,24 +3,17 @@ loaderVersion="[36,)"
 license="All rights reserved"
 
 [[mods]]
-modId="colony_ai"
-version="1.0"
-displayName="Colony Intelligence & Automation"
-authors="colony_ai"
+modId="colonyai"
+version="${version}"
+displayName="ColonyAI"
+authors="sasha"
 description='''
-Client-side automation helper for MineColonies.
+MineColonies assistant with modular GUI and Baritone integration.
 '''
 
-[[dependencies.colony_ai]]
+[[dependencies.colonyai]]
 modId="forge"
 mandatory=true
 versionRange="[36.2.34,)"
 ordering="NONE"
-side="CLIENT"
-
-[[dependencies.colony_ai]]
-modId="minecolonies"
-mandatory=false
-versionRange="[1.16.5-1.0.0-RELEASE,)"
-ordering="AFTER"
 side="CLIENT"

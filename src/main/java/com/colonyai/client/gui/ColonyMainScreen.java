@@ -1,49 +1,50 @@
 package com.colonyai.client.gui;
 
+import com.colonyai.module.Category;
 import com.colonyai.module.Module;
 import com.colonyai.module.ModuleManager;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import java.util.List;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.text.StringTextComponent;
 
-public class ColonyMainScreen extends Screen
+public final class ColonyMainScreen extends Screen
 {
-    private static final int PANEL_W = 340;
-    private static final int PANEL_H = 220;
     private final ModuleManager moduleManager;
-    private Tab selected = Tab.LOGISTICS;
+    private Category selectedCategory = Category.COMBAT;
 
     public ColonyMainScreen(final ModuleManager moduleManager)
     {
-        super(new StringTextComponent("Colony Intelligence & Automation"));
+        super(new StringTextComponent("ColonyAI"));
         this.moduleManager = moduleManager;
     }
 
     @Override
     protected void init()
     {
-        this.buttons.clear();
+        this.clearWidgets();
 
-        int tabX = (this.width - PANEL_W) / 2 + 10;
-        final int tabY = (this.height - PANEL_H) / 2 + 10;
+        final int leftX = this.width / 2 - 160;
+        final int topY = this.height / 2 - 100;
 
-        for (final Tab tab : Tab.values())
+        int categoryY = topY + 24;
+        for (final Category category : Category.values())
         {
-            final Tab t = tab;
-            this.addButton(new Button(tabX, tabY, 75, 20, new StringTextComponent(tab.label), b -> selected = t));
-            tabX += 80;
+            this.addButton(new Button(leftX + 10, categoryY, 100, 20, new StringTextComponent(category.getDisplayName()), button -> {
+                selectedCategory = category;
+                init();
+            }));
+            categoryY += 24;
         }
 
-        int y = tabY + 34;
-        for (final Module module : moduleManager.allModules())
+        final List<Module> modules = moduleManager.getModulesByCategory(selectedCategory);
+        int moduleY = topY + 24;
+        for (final Module module : modules)
         {
-            final Module m = module;
-            this.addButton(new Button((this.width - PANEL_W) / 2 + 16, y, PANEL_W - 32, 20, labelFor(m), b -> {
-                m.setEnabled(!m.isEnabled());
-                b.setMessage(labelFor(m));
-            }));
-            y += 24;
+            this.addButton(new ModuleButton(leftX + 125, moduleY, 185, 20, module));
+            moduleY += 24;
         }
     }
 
@@ -51,34 +52,37 @@ public class ColonyMainScreen extends Screen
     public void render(final MatrixStack stack, final int mouseX, final int mouseY, final float partialTicks)
     {
         this.renderBackground(stack);
+        final int leftX = this.width / 2 - 160;
+        final int topY = this.height / 2 - 100;
 
-        final int x = (this.width - PANEL_W) / 2;
-        final int y = (this.height - PANEL_H) / 2;
+        fill(stack, leftX, topY, leftX + 320, topY + 200, 0xCC111111);
+        fill(stack, leftX + 120, topY + 20, leftX + 121, topY + 190, 0xFF444444);
 
-        fillGradient(stack, x, y, x + PANEL_W, y + PANEL_H, 0xC80A0A0A, 0xAA121212);
-        drawCenteredString(stack, this.font, this.title, this.width / 2, y + 8, 0xF0F0F0);
-        drawString(stack, this.font, "Tab: " + selected.label, x + 12, y + PANEL_H - 18, 0xAAAAAA);
+        Minecraft.getInstance().fontRenderer.draw(stack, "Categories", leftX + 10, topY + 8, 0xFFFFFF);
+        Minecraft.getInstance().fontRenderer.draw(stack, selectedCategory.getDisplayName() + " Modules", leftX + 125, topY + 8, 0xFFFFFF);
 
         super.render(stack, mouseX, mouseY, partialTicks);
     }
 
-    private StringTextComponent labelFor(final Module module)
+    private static final class ModuleButton extends Button
     {
-        return new StringTextComponent(module.displayName() + ": " + (module.isEnabled() ? "ON" : "OFF"));
-    }
+        private final Module module;
 
-    private enum Tab
-    {
-        LOGISTICS("Logistics"),
-        COMBAT("Combat"),
-        AFK_SURVIVAL("AFK/Survival"),
-        SETTINGS("Settings");
-
-        private final String label;
-
-        Tab(final String label)
+        private ModuleButton(final int x, final int y, final int width, final int height, final Module module)
         {
-            this.label = label;
+            super(x, y, width, height, new StringTextComponent(module.getName()), button -> {
+                module.toggle();
+                button.setMessage(new StringTextComponent(module.getName()));
+            });
+            this.module = module;
+        }
+
+        @Override
+        public void renderButton(final MatrixStack stack, final int mouseX, final int mouseY, final float partialTicks)
+        {
+            final int color = module.isEnabled() ? 0xCC118833 : 0xCC882222;
+            fill(stack, this.x, this.y, this.x + this.width, this.y + this.height, color);
+            Minecraft.getInstance().fontRenderer.draw(stack, module.getName(), this.x + 6, this.y + 6, 0xFFFFFF);
         }
     }
 }
